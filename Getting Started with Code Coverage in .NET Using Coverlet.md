@@ -15,7 +15,7 @@ Run your tests with code coverage collection enabled:
  supported formats include: cobertura (default), opencover, json, lcov
  `dotnet test --collect:"XPlat Code Coverage;Format=opencover"`
  You can also provide a comma‑separated list of formats if you’d like multiple outputs, for example:
-`dotnet test --collect:"XPlat Code Coverage;Format=json,lcov,cobertura"`
+ `dotnet test --collect:"XPlat Code Coverage;Format=json,lcov,cobertura"`
 ### Advanced Configuration  
 Using a .runsettings File  
 You can configure code coverage collection using a .runsettings file. For example:  
