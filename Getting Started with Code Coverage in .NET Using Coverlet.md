@@ -10,7 +10,32 @@ Add the package to your project:
 `dotnet add package coverlet.collector`  
 Run your tests with code coverage collection enabled:  
 `dotnet test --collect:"XPlat Code Coverage"`  
-The coverage report is generated in a .coverage file, typically located in the TestResults folder.
+ By default, it gathers coverage data using the Cobertura format and produces a file named coverage.cobertura.xml in a subfolder (named with a GUID) under the project’s TestResults directory.
+ You can customize its behavior by appending additional parameters after the collector name (separated by semicolons).
+ supported formats include: cobertura (default), opencover, json, lcov
+ `dotnet test --collect:"XPlat Code Coverage;Format=opencover"`
+ You can also provide a comma‑separated list of formats if you’d like multiple outputs, for example:
+`dotnet test --collect:"XPlat Code Coverage;Format=json,lcov,cobertura"`
+### Advanced Configuration  
+Using a .runsettings File  
+You can configure code coverage collection using a .runsettings file. For example:  
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>lcov</Format>
+          <OutputDirectory>coverage</OutputDirectory>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>
+```
+Run your tests with the settings file:  
+`dotnet test --settings codecoverage.runsettings`  
 
 ## Coverlet.MSBuild
 `Coverlet.MSBuild` integrates with MSBuild to collect code coverage data during the build process.
@@ -50,6 +75,9 @@ The Publish target packages the application for deployment.
 ### Execution
 When you run commands like dotnet build or dotnet test, the .NET CLI invokes MSBuild behind the scenes to execute the appropriate targets.
 
+### Commmand
+`dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover`
+
 ## How Coverlet Integrates with MSBuild
 `Coverlet.MSBuild` adds custom tasks that run with the Test target.  
 
@@ -58,26 +86,7 @@ When you run commands like dotnet build or dotnet test, the .NET CLI invokes MSB
 ### Why Don’t You See &lt;Target&gt; or &lt;Task&gt; Tags?  
 When you run dotnet build or dotnet test, the .NET SDK automatically includes predefined targets and tasks (e.g., Build, Clean, Publish). To inspect the full build process, including implicit targets and tasks, you can generate a preprocessed MSBuild file using the following command:  
 `dotnet msbuild -preprocess`  
-### Advanced Configuration  
-Using a .runsettings File  
-You can configure code coverage collection using a .runsettings file. For example:  
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<RunSettings>
-  <DataCollectionRunSettings>
-    <DataCollectors>
-      <DataCollector friendlyName="XPlat Code Coverage">
-        <Configuration>
-          <Format>lcov</Format>
-          <OutputDirectory>coverage</OutputDirectory>
-        </Configuration>
-      </DataCollector>
-    </DataCollectors>
-  </DataCollectionRunSettings>
-</RunSettings>
-```
-Run your tests with the settings file:  
-`dotnet test --settings codecoverage.runsettings`  
+
 ## Configuring Coverage Gutters in VS Code  
 To display code coverage information in Visual Studio Code using the Coverage Gutters extension, add the following to your settings.json file"  
 ```json
