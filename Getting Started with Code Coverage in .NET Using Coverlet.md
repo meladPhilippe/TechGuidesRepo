@@ -13,7 +13,7 @@ Run your tests with code coverage collection enabled:
  By default, it gathers coverage data using the Cobertura format and produces a file named coverage.cobertura.xml in a subfolder (named with a GUID) under the project’s TestResults directory.
  You can customize its behavior by appending additional parameters after the collector name (separated by semicolons).
  supported formats include: cobertura (default), opencover, json, lcov   
- `dotnet test --collect:"XPlat Code Coverage;Format=opencover"`
+ `dotnet test --collect:"XPlat Code Coverage;Format=opencover"`   
  You can also provide a comma‑separated list of formats if you’d like multiple outputs, for example:   
  `dotnet test --collect:"XPlat Code Coverage;Format=json,lcov,cobertura"`
 ### Advanced Configuration  
