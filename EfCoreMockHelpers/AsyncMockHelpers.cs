@@ -80,17 +80,55 @@ public class TestAsyncQueryProvider<T> : IAsyncQueryProvider
     {
         return _inner.Execute<TResult>(expression);
     }
-    public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
+     public TResult ExecuteAsync<TResult>(Expression expression, CancellationToken cancellationToken = default)
+ {
+     cancellationToken.ThrowIfCancellationRequested();
 
-        if (_inner is IAsyncQueryProvider asyncProvider)
-        {
-            return asyncProvider.ExecuteAsync<TResult>(expression, cancellationToken);
-        }
-        else
-        {
-            return _inner.Execute<TResult>(expression);
-        }
-    }
+     // Handle EF Core async extension methods
+     if (expression is MethodCallExpression methodCall &&
+         methodCall.Method.DeclaringType == typeof(EntityFrameworkQueryableExtensions))
+     {
+         var methodName = methodCall.Method.Name;
+         if (methodName.EndsWith("Async"))
+         {
+             var syncMethodName = methodName[..^"Async".Length];
+             var syncMethod = typeof(Queryable).GetMethods()
+                 .FirstOrDefault(m => m.Name == syncMethodName &&
+                     m.GetParameters().Length == methodCall.Method.GetParameters().Length - 1);
+
+             if (syncMethod != null)
+             {
+                 var genericArgs = methodCall.Method.GetGenericArguments();
+                 var syncMethodGeneric = syncMethod.MakeGenericMethod(genericArgs);
+                 var args = methodCall.Arguments.Take(methodCall.Arguments.Count - 1).ToList();
+                 var syncExpression = Expression.Call(null, syncMethodGeneric, args);
+
+                 var result = _inner.Execute(syncExpression);
+
+                 // Handle Task<T> return type using reflection
+                 var taskType = typeof(Task<>).MakeGenericType(result?.GetType() ?? typeof(object));
+                 return (TResult)Activator.CreateInstance(taskType, result)!;
+             }
+         }
+     }
+
+     // Fallback for other cases
+     var rawResult = _inner.Execute(expression);
+
+     // Handle Task<T> return type
+     if (typeof(TResult).IsGenericType &&
+         typeof(TResult).GetGenericTypeDefinition() == typeof(Task<>))
+     {
+         Type resultType = typeof(TResult).GetGenericArguments()[0];
+         object castResult = Convert.ChangeType(rawResult, resultType)!;
+
+         // Get Task.FromResult method using reflection
+         var fromResultMethod = typeof(Task).GetMethod(nameof(Task.FromResult))
+             ?.MakeGenericMethod(resultType);
+
+         return (TResult)fromResultMethod?.Invoke(null, new[] { castResult })!;
+     }
+
+     return (TResult)rawResult!;
+ }
 }
